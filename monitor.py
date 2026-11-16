@@ -12,7 +12,8 @@ PASSWORD = os.environ["PORTFOLIO_PASSWORD"]
 TG_TOKEN = os.environ["TG_TOKEN"]
 TG_CHAT = os.environ["TG_CHAT_ID"]
 STATE_FILE = "state.json"
-TABS = ["Главная", "Задания", "Работы", "Моё портфолио"]
+TABS = ["Отработки"]
+
 
 JS = """
 () => {
@@ -100,6 +101,7 @@ def main():
             found = page.evaluate(JS)
             print(f"[вкладка {tab}] карточек: {len(found)}")
             print("  кнопки:", short(" ; ".join(page.evaluate(JS_CLICK)), 600))
+            print("  текст:", short(page.inner_text("body"), 1500))
             for t in found:
                 try:
                     c = parse(t)
