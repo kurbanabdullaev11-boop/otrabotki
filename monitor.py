@@ -14,7 +14,6 @@ TG_CHAT = os.environ["TG_CHAT_ID"]
 STATE_FILE = "state.json"
 TABS = ["Главная", "Задания", "Работы", "Моё портфолио"]
 
-# Ищем самые мелкие блоки, где есть и "Записано X из Y", и дата
 JS = """
 () => {
   const has = t => /Записано\\s*\\d+\\s*из\\s*\\d+/.test(t) && /\\d{2}\\.\\d{2}\\.\\d{4}/.test(t);
@@ -29,6 +28,12 @@ JS = """
   }
   return out;
 }
+"""
+
+JS_CLICK = """
+() => [...new Set([...document.querySelectorAll('a,button,[role=tab],summary')]
+  .map(e => (e.innerText || '').trim())
+  .filter(t => t && t.length < 40))]
 """
 
 
@@ -65,6 +70,10 @@ def parse(text):
     }
 
 
+def short(s, n):
+    return s[:n].replace("\n", " | ")
+
+
 def main():
     cards = {}
     with sync_playwright() as p:
@@ -76,27 +85,28 @@ def main():
             "input:not([type=password]):not([type=hidden]):not([type=checkbox])"
         ).first.fill(LOGIN)
         page.get_by_role("button", name="Войти").first.click()
-        page.wait_for_timeout(4000)
+        page.wait_for_timeout(5000)
 
-        debug = []
+        print("URL после входа:", page.url)
+        print("Текст после входа:", short(page.inner_text("body"), 700))
+
         for tab in TABS:
             try:
                 page.get_by_text(tab, exact=True).first.click(timeout=5000)
                 page.wait_for_timeout(3000)
             except Exception:
-                debug.append(f"[нет вкладки {tab}]")
+                print(f"[вкладка {tab}] не нажалась")
                 continue
-            debug.append(f"=== {tab} ===\n" + page.inner_text("body")[:3000])
-            for t in page.evaluate(JS):
+            found = page.evaluate(JS)
+            print(f"[вкладка {tab}] карточек: {len(found)}")
+            print("  кнопки:", short(" ; ".join(page.evaluate(JS_CLICK)), 600))
+            for t in found:
                 try:
                     c = parse(t)
                     cards[c["key"]] = c
                 except Exception as e:
-                    debug.append(f"[ошибка разбора: {e}]")
+                    print("  ошибка разбора:", e)
         browser.close()
-
-    with open("debug.txt", "w", encoding="utf-8") as f:
-        f.write("\n\n".join(debug))
 
     if not cards:
         print("Карточки не найдены, состояние не меняю")
