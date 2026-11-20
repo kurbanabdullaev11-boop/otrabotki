@@ -1,5 +1,5 @@
 {
-  "mode": "dry",
+  "sprint": {"at": "14:30", "stop_after_min": 3},
   "sprint": {"at": "08:00", "stop_after_min": 10},
   "rules": [
     {"date": "*", "discipline": "Анатомия", "debt": "oldest"}
