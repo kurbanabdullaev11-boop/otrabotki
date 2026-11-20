@@ -1,0 +1,27 @@
+name: sprint
+on:
+  schedule:
+    - cron: "35 4 * * *"
+    - cron: "45 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sprint
+  cancel-in-progress: false
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright && playwright install --with-deps chromium
+      - run: python sprint.py
+        env:
+          PORTFOLIO_LOGIN: ${{ secrets.PORTFOLIO_LOGIN }}
+          PORTFOLIO_PASSWORD: ${{ secrets.PORTFOLIO_PASSWORD }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
