@@ -1,0 +1,7 @@
+{
+  "mode": "dry",
+  "sprint": {"at": "08:00", "stop_after_min": 10},
+  "rules": [
+    {"date": "*", "discipline": "Анатомия", "debt": "oldest"}
+  ]
+}
