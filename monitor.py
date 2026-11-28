@@ -18,11 +18,13 @@ STATE_FILE = "state.json"
 RULES_FILE = "rules.json"
 
 MSK = ZoneInfo("Europe/Moscow")
+# check = обычная проверка (monitor), rush = утренний рывок (sprint)
+MODE = os.environ.get("MODE", "check")
 # Окно рывка по московскому времени
 LOGIN_AT = (7, 57, 0)      # во столько бот входит в портфолио
 RUSH_AT = (7, 59, 59)      # во столько первый раз жмёт «Отработки»
 RUSH_END = (8, 4, 0)       # до сюда крутит цикл
-WINDOW_START = (6, 0, 0)   # раньше этого рывок не включается
+WINDOW_START = (7, 30, 0)  # с этого времени работает только рывок (sprint)
 RETRY_PAUSE_MS = 400       # пауза между заходами меню -> «Отработки»
 MAX_ATTEMPTS = 3           # попыток записи на одну карточку
 
@@ -359,8 +361,18 @@ def main():
     }
     armed = meta["armed"]
 
+    t0 = now()
+    in_window = False
+    if MODE == "rush":
+        if not (at(WINDOW_START) <= t0 < at(RUSH_END)):
+            print("Рывок: сейчас не время, выхожу")
+            return
+        in_window = True
+    elif at(WINDOW_START) <= t0 < at(RUSH_END):
+        print("Окно рывка: обычную проверку пропускаю")
+        return
+
     process_taps(meta)
-    in_window = at(WINDOW_START) <= now() < at(RUSH_END)
     if in_window and now() < at(LOGIN_AT):
         wait_with_taps(at(LOGIN_AT), meta)
 
@@ -370,7 +382,7 @@ def main():
         login(page)
         process_taps(meta)
 
-        if in_window and (rules or armed):
+        if MODE == "rush" and (rules or armed):
             rush(page, rules, live, armed)
         else:
             try:
